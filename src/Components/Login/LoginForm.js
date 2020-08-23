@@ -1,46 +1,61 @@
-import React from "react";
+import React from 'react';
+import Input from '../Forms/Input';
+import Button from '../Forms/Button';
+import useForm from '../../Hooks/useForm';
+import { TOKEN_POST, USER_GET } from '../../api';
 
 const LoginForm = () => {
-  const [username, setUsername] = React.useState("");
-  const [password, setPassword] = React.useState("");
+  const username = useForm('email');
+  const password = useForm();
 
-  function handleLogin (event) {
-    event.preventDefault()
-    fetch('https://dogsapi.origamid.dev/json/jwt-auth/v1/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ username, password })
-    }).then(response => {
-      console.log(response)
-      return response.json()
-    }).then(json => {
-      console.log(json)
-    })
+  React.useEffect(() => {
+    const token = window.localStorage.getItem('token');
+    if (token) {
+      getUser(token);
+    }
+  });
+
+  async function getUser(token) {
+    const { url, options } = USER_GET(token);
+    const response = await fetch(url, options);
+    const json = await response.json();
+  }
+
+  async function handleLogin(event) {
+    event.preventDefault();
+    if (username.validate() && password.validate()) {
+      const { url, options } = TOKEN_POST({
+        username: username.value,
+        password: password.value,
+      });
+
+      const response = await fetch(url, options);
+      const json = await response.json();
+      window.localStorage.setItem('token', json.token);
+    }
   }
 
   return (
     <section>
       <h1>Login</h1>
       <form onSubmit={handleLogin}>
-        <input
+        <Input
           type="text"
-          value={username}
           name="username"
-          onChange={(target) => setUsername(target.value) }
+          label="Username"
+          {...username}
+          // onChange={(target) => setUsername(target.value) }
         />
 
-        <input
+        <Input
           type="password"
-          value={password}
-          name="username"
-          onChange={(target) => setPassword(target.value) }
+          name="password"
+          label="Senha"
+          {...password}
+          // onChange={(target) => setPassword(target.value) }
         />
 
-        <button >
-          Entrar
-        </button>
+        <Button disabled>Entrar</Button>
       </form>
     </section>
   );
